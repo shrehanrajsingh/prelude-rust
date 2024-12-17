@@ -1,0 +1,13 @@
+- Opcodes for Prelude-Rust
+
+--------------------------------------------------------------
+| Instruction |      Expression     |         Opcode         |
+--------------------------------------------------------------
+mov             mov Rn, #data         0x74 + `n` (116 to 123)
+mov             mov Rn, Rm            0x7C + 8*`n`+`m` (124 to 131)
+mov             mov A, Rn             0x84 + `n` (132 to 139)
+mov             mov A, #data          0x8C (140)
+mov             mov Rn, A             0x8D + `n` (141 to 148)
+mov             mov B, Rn             0x95 + `n` (149 to 156)
+mov             mov B, #data          0x9D (157)
+mov             mov Rn, B             0x9E + `n` (158 to 165)

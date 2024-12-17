@@ -1,0 +1,22 @@
+org 00H
+
+main:
+mov R7, msg
+
+l1:
+cmp R7, 0
+je l2
+
+mov R0, #9H
+mov R1, R7
+int 21H
+
+mov A, R7
+add A, 1
+mov R7, A
+jmp l1
+
+l2:
+end
+
+msg DB "Hello, World!", 13, 0; "Hello, World!\n\0"
