@@ -8,6 +8,7 @@ use regs::Register8;
 use psw::Psw;
 use ram::Ram;
 
+#[derive(Debug)]
 pub struct AllRegs {
     pub a: regs::Register8,
     pub b: regs::Register8,

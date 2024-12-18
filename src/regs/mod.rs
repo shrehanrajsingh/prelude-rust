@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Register8 {
     pub value: u8,
 }
@@ -30,6 +31,7 @@ impl Register8 {
     }
 }
 
+#[derive(Debug)]
 pub struct Register16 {
     pub value: u16,
 }

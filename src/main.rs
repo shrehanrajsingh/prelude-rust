@@ -18,6 +18,9 @@ fn main() {
     bytes.append(&mut codegen::mov_rn_data(0, 12)); // mov r0, #12H
     bytes.append(&mut codegen::mov_rn_data(1, 34)); // mov r1, #34H
 
+    bytes.append(&mut codegen::mov_a_rn(0));
+    bytes.append(&mut codegen::add_a_rn(1));
+
     bytes.push(0); // mov a, #56H
 
     em.burn(bytes);
@@ -26,4 +29,5 @@ fn main() {
     asmctx.run();
 
     println!("{:?}", asmctx.em.ram);
+    println!("{:?}", asmctx.em.reg);
 }

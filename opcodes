@@ -11,3 +11,11 @@ mov             mov Rn, A             0x8D + `n` (141 to 148)
 mov             mov B, Rn             0x95 + `n` (149 to 156)
 mov             mov B, #data          0x9D (157)
 mov             mov Rn, B             0x9E + `n` (158 to 165)
+mov             mov A, B              0xA6 (166)
+mov             mov B, A              0xA7 (167)
+--
+add             add A, #data          0x50 (80)
+add             add A, B              0x51 (81)
+add             add A, Rn             0x52 + `n` (82 to 89)
+--
+int             int 21H               0x21 (33)

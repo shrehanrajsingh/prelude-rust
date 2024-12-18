@@ -1,3 +1,4 @@
+/* mov instructions */
 /**
  * MOV Rn, #data
  */
@@ -42,5 +43,53 @@ pub fn mov_a_rn(rn: u8) -> Vec<u8> {
 pub fn mov_rn_a(rn: u8) -> Vec<u8> {
     let mut bytes = Vec::new();
     bytes.push(0x8d + rn);
+    bytes
+}
+
+/**
+ * MOV A, B
+ */
+pub fn mov_a_b() -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.push(0xA6);
+    bytes
+}
+
+/**
+ * MOV B, A
+ */
+pub fn mov_b_a() -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.push(0xA7);
+    bytes
+}
+
+/* add instructions */
+
+/**
+ * ADD A, #data
+ */
+pub fn add_a_data(data: u8) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.push(0x50);
+    bytes.push(data);
+    bytes
+}
+
+/**
+ * ADD A, B
+ */
+pub fn add_a_b() -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.push(0x51);
+    bytes
+}
+
+/**
+ * ADD A, Rn
+ */
+pub fn add_a_rn(rn: u8) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.push(0x52 + rn);
     bytes
 }
