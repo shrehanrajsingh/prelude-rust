@@ -1,0 +1,9 @@
+org 00H
+
+mov R0, #100
+mov R1, #100
+
+mov A, R0
+add A, R1
+
+end
