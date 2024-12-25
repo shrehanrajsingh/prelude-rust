@@ -7,6 +7,7 @@ pub mod regs;
 use assembler::codegen;
 use assembler::engine;
 use assembler::lexer::LexerContext;
+use assembler::parser::IPContext;
 use emulator::Emulator;
 
 use engine::AsmContext;
@@ -37,5 +38,14 @@ fn main() {
     let mut lc = LexerContext::new(contents);
 
     lc.run();
-    println!("{:?}", lc.dt);
+    let mut pc = IPContext::new(lc.dt);
+    pc.run();
+
+    // println!("{:?}", pc.cg);
+    let mut asmctx = AsmContext::new(em);
+    asmctx.em.burn(pc.cg);
+    asmctx.run();
+
+    println!("{:?}", asmctx.em.ram);
+    println!("{:?}", asmctx.em.reg);
 }

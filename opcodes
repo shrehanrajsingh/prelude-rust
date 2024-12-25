@@ -17,5 +17,6 @@ mov             mov B, A              0xA7 (167)
 add             add A, #data          0x50 (80)
 add             add A, B              0x51 (81)
 add             add A, Rn             0x52 + `n` (82 to 89)
+add             add A, A              0x5A (90)
 --
 int             int 21H               0x21 (33)

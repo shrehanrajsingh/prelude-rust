@@ -47,7 +47,10 @@ impl LexerContext {
 
             if line[line.len() - 1..].eq(":") {
                 let label = line[..line.len() - 1].to_string();
-                println!("label: {}", label);
+                self.dt.push(Instruction::Label {
+                    name: label,
+                    line: curr_line,
+                });
                 continue;
             }
 

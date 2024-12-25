@@ -93,3 +93,12 @@ pub fn add_a_rn(rn: u8) -> Vec<u8> {
     bytes.push(0x52 + rn);
     bytes
 }
+
+/**
+ * ADD A, A
+ */
+pub fn add_a_a() -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.push(0x5A);
+    bytes
+}
