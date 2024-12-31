@@ -1,9 +1,6 @@
 org 0H
 
-mov R0, #10H
-mov R1, #100
-
-mov A, R0
-add A, R1
+mov A, #0
+sjmp $
 
 end

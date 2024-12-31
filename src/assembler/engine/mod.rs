@@ -164,6 +164,25 @@ impl AsmContext {
                     self.em.reg.a.set(data);
                 }
 
+                0x28 => {
+                    /*
+                       sjmp addr_rel
+                    */
+                    let addr_rel = self.em.rom[(*pc + 1) as usize] as i8;
+                    *pc = (*pc as i16 + 2 + addr_rel as i16) as u16;
+                    continue;
+                }
+
+                0x29 => {
+                    /*
+                       ljmp addr
+                    */
+                    let addr = (self.em.rom[(*pc + 1) as usize] as u16) << 8
+                        | self.em.rom[(*pc + 2) as usize] as u16;
+                    *pc = addr;
+                    continue;
+                }
+
                 _ => (),
             }
 

@@ -1,0 +1,7 @@
+org 00H
+
+here;
+mov A, #0
+sjmp here
+
+end

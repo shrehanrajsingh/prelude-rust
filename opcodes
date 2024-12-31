@@ -1,4 +1,4 @@
-- Opcodes for Prelude-Rust
+- Opcodes for Prelude-Rust (Big-Endian)
 
 --------------------------------------------------------------
 | Instruction |      Expression     |         Opcode         |
@@ -20,3 +20,6 @@ add             add A, Rn             0x52 + `n` (82 to 89)
 add             add A, A              0x5A (90)
 --
 int             int 21H               0x21 (33)
+--
+sjmp            sjmp addr_rel         0x28 (40)
+ljmp            ljmp addr             0x29 (41)

@@ -1,5 +1,4 @@
 use super::{codegen, lexer::Instruction};
-use core::panic;
 use std::collections::HashMap;
 
 pub enum Destination {
@@ -32,22 +31,65 @@ impl IPContext {
         }
     }
 
+    pub fn parse_address(&self, op: &str) -> u8 {
+        if self.lb.contains_key(op) {
+            self.lb[op] as u8
+        } else if op.starts_with("#") {
+            parse_number(&op[1..])
+        } else {
+            panic!("invalid address");
+        }
+    }
+
+    pub fn parse_address_16(&self, op: &str) -> u16 {
+        if self.lb.contains_key(op) {
+            self.lb[op] as u16
+        } else if op.starts_with("#") {
+            parse_number(&op[1..]) as u16
+        } else {
+            panic!("invalid address");
+        }
+    }
+
     pub fn run(&mut self) {
-        let mut pc = 0;
+        let mut pc: u16 = 0;
 
         for ins in self.raw.iter() {
+            self.lb.insert(String::from("$"), pc as usize);
+
             match ins {
                 Instruction::OneArg { name, op, line } => match name.as_str() {
                     "org" => {
-                        let addr = parse_number(&op);
+                        let addr = parse_number_16(op);
 
-                        if addr >= pc as u8 {
+                        if addr >= pc {
                             for _ in 0..(addr - pc) {
                                 self.cg.push(0);
+                                pc += 1;
                             }
                         } else {
                             panic!("Invalid address for `org` directive");
                         }
+                    }
+                    "sjmp" => {
+                        let mut addr = self.parse_address(op);
+
+                        if addr < pc as u8 + 2 {
+                            addr = (pc as u8 + 2) - addr;
+                            addr = !addr;
+                            addr += 1;
+                        } else {
+                            addr = addr - (pc as u8 + 2);
+                        }
+
+                        self.cg.append(&mut codegen::sjmp(addr as u8));
+                        pc += 2;
+                    }
+                    "ljmp" => {
+                        let addr = self.parse_address_16(op);
+
+                        self.cg.append(&mut codegen::ljmp(addr));
+                        pc += 3;
                     }
                     _ => (),
                 },
@@ -59,8 +101,8 @@ impl IPContext {
                     line,
                 } => match name.as_str() {
                     "mov" => {
-                        let dest = parse_destination(&op1);
-                        let src = parse_source(&op2);
+                        let dest = parse_destination(op1);
+                        let src = parse_source(op2);
 
                         match dest {
                             Destination::RegisterR(rn) => match src {
@@ -72,7 +114,7 @@ impl IPContext {
                                 }
                                 Source::RegisterB => {
                                     // TODO: implement
-                                    // self.cg.append(&mut codegen::mov_rn_b(rn));
+                                    self.cg.append(&mut codegen::mov_rn_b(rn));
                                 }
                                 Source::RegisterR(rm) => {
                                     self.cg.append(&mut codegen::mov_rn_rn(rn, rm));
@@ -91,19 +133,38 @@ impl IPContext {
                                 Source::RegisterB => {
                                     self.cg.append(&mut codegen::mov_a_b());
                                 }
-                                Source::Label(name) => {
+                                Source::Label(_name) => {
                                     // TODO: implement
                                 }
                                 Source::RegisterA => {
                                     panic!("Invalid source for `mov` instruction (mov A, A)");
                                 }
                             },
+                            Destination::RegisterB => match src {
+                                Source::Immediate(data) => {
+                                    self.cg.append(&mut codegen::mov_b_data(data));
+                                }
+                                Source::RegisterR(rn) => {
+                                    self.cg.append(&mut codegen::mov_b_rn(rn));
+                                }
+                                Source::RegisterB => {
+                                    panic!("Invalid source for `mov` instruction (mov B, B)");
+                                }
+                                Source::Label(_name) => {
+                                    // TODO: implement
+                                }
+                                Source::RegisterA => {
+                                    self.cg.append(&mut codegen::mov_b_a());
+                                }
+                            },
                             _ => {}
                         }
+
+                        pc += 2;
                     }
                     "add" => {
-                        let dest = parse_destination(&op1);
-                        let src = parse_source(&op2);
+                        let dest = parse_destination(op1);
+                        let src = parse_source(op2);
 
                         assert!(matches!(dest, Destination::RegisterA));
 
@@ -120,8 +181,10 @@ impl IPContext {
                             Source::RegisterB => {
                                 self.cg.append(&mut codegen::add_a_b());
                             }
-                            Source::Label(name) => {}
+                            Source::Label(_name) => {}
                         }
+
+                        pc += 2;
                     }
                     _ => (),
                 },
@@ -135,24 +198,90 @@ impl IPContext {
                 }
                 _ => (),
             }
-
-            pc += 1;
         }
     }
 }
 
 pub fn parse_number(s: &str) -> u8 {
-    if s.ends_with('H') || s.ends_with('h') {
-        u8::from_str_radix(&s[..s.len() - 1], 16).unwrap()
-    } else if s.ends_with('B') || s.ends_with('b') {
-        u8::from_str_radix(&s[..s.len() - 1], 2).unwrap()
-    } else if s.ends_with('O') || s.ends_with('o') {
-        u8::from_str_radix(&s[..s.len() - 1], 8).unwrap()
-    } else if s.ends_with('D') || s.ends_with('d') {
-        u8::from_str_radix(&s[..s.len() - 1], 10).unwrap()
-    } else {
-        s.parse::<u8>().unwrap()
+    let mut isneg = false;
+    if s[0..1].eq("-") {
+        isneg = true;
+        panic!("negative numbers are not supported.");
     }
+
+    let mut p = s;
+    if isneg {
+        p = &p[1..];
+    }
+
+    let mut res: u8;
+    if p.ends_with('H') || p.ends_with('h') {
+        res = u8::from_str_radix(&s[..p.len() - 1], 16).unwrap()
+    } else if p.ends_with('B') || p.ends_with('b') {
+        res = u8::from_str_radix(&s[..p.len() - 1], 2).unwrap()
+    } else if p.ends_with('O') || p.ends_with('o') {
+        res = u8::from_str_radix(&s[..p.len() - 1], 8).unwrap()
+    } else if p.ends_with('D') || p.ends_with('d') {
+        res = u8::from_str_radix(&s[..p.len() - 1], 10).unwrap()
+    } else {
+        res = p.parse::<u8>().unwrap()
+    }
+
+    // if isneg {
+    //     res = res - 1;
+    //     res = !res;
+
+    //     if res < 128 {
+    //         panic!("negative number out of 8-bit bounds.");
+    //     }
+    // } else {
+    //     if res > 127 {
+    //         panic!("number out of 8-bit bounds.");
+    //     }
+    // }
+
+    res
+}
+
+pub fn parse_number_16(s: &str) -> u16 {
+    let mut isneg = false;
+    if s[0..1].eq("-") {
+        isneg = true;
+        panic!("negative numbers are not supported.");
+    }
+
+    let mut p = s;
+    if isneg {
+        p = &p[1..];
+    }
+
+    let mut res: u16;
+    if p.ends_with('H') || p.ends_with('h') {
+        res = u16::from_str_radix(&s[..p.len() - 1], 16).unwrap()
+    } else if p.ends_with('B') || p.ends_with('b') {
+        res = u16::from_str_radix(&s[..p.len() - 1], 2).unwrap()
+    } else if p.ends_with('O') || p.ends_with('o') {
+        res = u16::from_str_radix(&s[..p.len() - 1], 8).unwrap()
+    } else if p.ends_with('D') || p.ends_with('d') {
+        res = u16::from_str_radix(&s[..p.len() - 1], 10).unwrap()
+    } else {
+        res = p.parse::<u16>().unwrap()
+    }
+
+    // if isneg {
+    //     res = res - 1;
+    //     res = !res;
+
+    //     if res < 128 {
+    //         panic!("negative number out of 8-bit bounds.");
+    //     }
+    // } else {
+    //     if res > 127 {
+    //         panic!("number out of 8-bit bounds.");
+    //     }
+    // }
+
+    res
 }
 
 pub fn parse_destination(s: &str) -> Destination {

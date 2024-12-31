@@ -48,4 +48,5 @@ fn main() {
 
     println!("{:?}", asmctx.em.ram);
     println!("{:?}", asmctx.em.reg);
+    println!("{:?}", asmctx.em.rom);
 }
