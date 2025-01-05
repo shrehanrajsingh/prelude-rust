@@ -1,6 +1,8 @@
-org 0H
+org 00H
 
-mov A, #0
-sjmp $
-
+mov A, #10
+sjmp next
+mov A, #20
+next:
+mov B, #30
 end

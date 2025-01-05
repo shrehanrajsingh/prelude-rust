@@ -168,8 +168,13 @@ impl AsmContext {
                     /*
                        sjmp addr_rel
                     */
-                    let addr_rel = self.em.rom[(*pc + 1) as usize] as i8;
-                    *pc = (*pc as i16 + 2 + addr_rel as i16) as u16;
+                    let addr_rel = self.em.rom[(*pc + 1) as usize] as u8;
+
+                    if addr_rel >> 7 == 1 {
+                        *pc = *pc + 1 - (255 - addr_rel) as u16;
+                    } else {
+                        *pc += addr_rel as u16;
+                    }
                     continue;
                 }
 

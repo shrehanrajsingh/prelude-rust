@@ -20,6 +20,7 @@ pub struct IPContext {
     pub cg: Vec<u8>,
     pub raw: Vec<Instruction>,
     pub lb: HashMap<String, usize>,
+    pub future_addrs: Vec<(usize, String, bool /* isAbsoluteAddress? */)>,
 }
 
 impl IPContext {
@@ -28,26 +29,31 @@ impl IPContext {
             cg: Vec::new(),
             raw,
             lb: HashMap::new(),
+            future_addrs: Vec::new(),
         }
     }
 
-    pub fn parse_address(&self, op: &str) -> u8 {
+    pub fn parse_address(&self, op: &str, fa: &mut String) -> u8 {
         if self.lb.contains_key(op) {
             self.lb[op] as u8
         } else if op.starts_with("#") {
             parse_number(&op[1..])
         } else {
-            panic!("invalid address");
+            // panic!("invalid address");
+            *fa = String::from(op.to_string());
+            0
         }
     }
 
-    pub fn parse_address_16(&self, op: &str) -> u16 {
+    pub fn parse_address_16(&self, op: &str, fa: &mut String) -> u16 {
         if self.lb.contains_key(op) {
             self.lb[op] as u16
         } else if op.starts_with("#") {
             parse_number(&op[1..]) as u16
         } else {
-            panic!("invalid address");
+            // panic!("invalid address");
+            *fa = String::from(op.to_string());
+            0
         }
     }
 
@@ -72,7 +78,13 @@ impl IPContext {
                         }
                     }
                     "sjmp" => {
-                        let mut addr = self.parse_address(op);
+                        let mut fa: String = String::new();
+                        let mut addr = self.parse_address(op, &mut fa);
+
+                        if fa.len() > 0 {
+                            self.future_addrs
+                                .push((self.cg.len() + 1 as usize, fa, false));
+                        }
 
                         if addr < pc as u8 + 2 {
                             addr = (pc as u8 + 2) - addr;
@@ -86,7 +98,13 @@ impl IPContext {
                         pc += 2;
                     }
                     "ljmp" => {
-                        let addr = self.parse_address_16(op);
+                        let mut fa: String = String::new();
+                        let addr = self.parse_address_16(op, &mut fa);
+
+                        if fa.len() > 0 {
+                            self.future_addrs
+                                .push((self.cg.len() + 1 as usize, fa, true));
+                        }
 
                         self.cg.append(&mut codegen::ljmp(addr));
                         pc += 3;
@@ -197,6 +215,17 @@ impl IPContext {
                     self.cg.push(0);
                 }
                 _ => (),
+            }
+        }
+
+        for (addr, name, isAbs) in self.future_addrs.iter() {
+            let a = self.lb[name] as usize;
+
+            if *isAbs {
+                self.cg[*addr] = (a >> 8) as u8;
+                self.cg[*addr + 1] = a as u8;
+            } else {
+                self.cg[*addr] = (a - *addr) as u8;
             }
         }
     }
